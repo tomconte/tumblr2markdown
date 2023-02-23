@@ -8,7 +8,7 @@ import os
 import codecs
 import argparse
 import hashlib # for image URL->path hashing
-import urllib2 # for image downloading
+from urllib.request import urlopen # for image downloading
 
 
 
@@ -25,7 +25,7 @@ def processPostBodyForImages(postBody, imagesPath, imagesUrlPath):
 
 		concreteImageUrl = imageMatch.group(0)
 		concreteImageExtension = imageMatch.group(1)
-		imageHash = hashlib.sha256(concreteImageUrl).hexdigest()
+		imageHash = hashlib.sha256(concreteImageUrl.encode('utf-8')).hexdigest()
 
 		# Create the image folder if it does not exist
 		if not os.path.exists(imagesPath):
@@ -40,18 +40,18 @@ def processPostBodyForImages(postBody, imagesPath, imagesUrlPath):
 			# This image was already downloaded, so just replace the URL in body
 
 			postBody = postBody.replace(concreteImageUrl, imageOutputUrlPath)
-			print "Found image url", concreteImageUrl, "already downloaded to path", concreteImagePath
+			print("Found image url", concreteImageUrl, "already downloaded to path", concreteImagePath)
 		else:
 
 			# Download the image and then replace the URL in body
 
-			imageContent = urllib2.urlopen(concreteImageUrl).read()
+			imageContent = urlopen(concreteImageUrl).read()
 			f = open(concreteImagePath, 'wb')
 			f.write(imageContent)
 			f.close()
 
 			postBody = postBody.replace(concreteImageUrl, imageOutputUrlPath)
-			print "Downloaded image url", concreteImageUrl, "to path", concreteImagePath
+			print("Downloaded image url", concreteImageUrl, "to path", concreteImagePath)
 
 	return postBody
 
@@ -77,9 +77,9 @@ def downloader(apiKey, host, postsPath, downloadImages, imagesPath, imagesUrlPat
 		posts = response['posts']
 		processed += len(posts)
 
-		print "Processing..."
+		print("Processing...")
 		for post in posts:
-			print "	http://" + host + "/post/" + str(post["id"])
+			print("	http://" + host + "/post/" + str(post["id"]))
 
 			try:
 				posts_per_type[post['type']] += 1
@@ -124,7 +124,7 @@ def downloader(apiKey, host, postsPath, downloadImages, imagesPath, imagesUrlPat
 				title = "(unknown post type)"
 				body = "missing body"
 
-				print post
+				print(post)
 
 			# Download images if requested
 			if downloadImages:
@@ -158,9 +158,9 @@ def downloader(apiKey, host, postsPath, downloadImages, imagesPath, imagesUrlPat
 
 			f.close()
 
-		print "Processed", processed, "out of", total_posts, "posts"
+		print("Processed", processed, "out of", total_posts, "posts")
 
-	print "Posts per type:", posts_per_type
+	print("Posts per type:", posts_per_type)
 
 
 
@@ -171,7 +171,7 @@ def findFileName(path, slug):
 		if not os.path.exists(file_name):
 			return file_name
 
-	print "ERROR: Too many clashes trying to create filename " +  makeFileName(path, slug)
+	print("ERROR: Too many clashes trying to create filename " +  makeFileName(path, slug))
 	exit()
 
 
@@ -198,11 +198,11 @@ def main():
 	args = parser.parse_args()
 
 	if not args.apiKey:
-		print "Tumblr API key is required."
+		print("Tumblr API key is required.")
 		exit(0)
 
 	if not args.host:
-		print "Tumblr host name is required."
+		print("Tumblr host name is required.")
 		exit(0)
 
 	downloader(args.apiKey, args.host, args.postsPath, args.downloadImages, args.imagesPath, args.imagesUrlPath)
